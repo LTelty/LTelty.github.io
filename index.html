@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cellar — Lance's Brew Log</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path d='M9 5h14l-2 22H11z' fill='%23b8742a'/><path d='M10 11h12' stroke='%23fff' stroke-width='2'/></svg>">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=gambetta@500,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#f6f1e9;--surface:#fffdf8;--ink:#2a2118;--muted:#7a6a58;--line:#e4d9c8;--accent:#a8641f;--accent2:#5c6b3a;--danger:#a33;--r:10px;
+font-family:Satoshi,system-ui,sans-serif;color:var(--ink);background:var(--bg)}
+@media (prefers-color-scheme:dark){:root{--bg:#17130f;--surface:#211b15;--ink:#efe6d8;--muted:#a8977f;--line:#3a3027;--accent:#e0994f;--accent2:#a7b97a}}
+*{box-sizing:border-box}body{margin:0;min-height:100vh}
+header{display:flex;align-items:center;gap:12px;padding:14px 22px;border-bottom:1px solid var(--line);background:var(--surface);position:sticky;top:0;z-index:5;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-family:Gambetta,serif;font-size:1.35rem;font-weight:600;margin-right:auto}
+nav{display:flex;gap:4px;flex-wrap:wrap}
+nav button{background:none;border:0;padding:8px 14px;border-radius:999px;font:inherit;color:var(--muted);cursor:pointer}
+nav button.on{background:var(--ink);color:var(--bg)}
+main{max-width:1100px;margin:0 auto;padding:24px 20px 60px}
+h2{font-family:Gambetta,serif;font-weight:600;font-size:1.6rem;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 20px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.card h3{margin:0 0 6px;font-size:1.05rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px}
+.kpi .v{font-size:1.8rem;font-weight:700;font-variant-numeric:tabular-nums}.kpi .l{color:var(--muted);font-size:.85rem}
+.tag{display:inline-block;font-size:.72rem;padding:2px 8px;border-radius:999px;background:var(--line);color:var(--ink);margin-right:4px;text-transform:uppercase;letter-spacing:.04em}
+.tag.ferm{background:var(--accent);color:#fff}.tag.done{background:var(--accent2);color:#fff}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:9px 16px;font:inherit;font-weight:500;cursor:pointer}
+.btn.ghost{background:none;color:var(--ink);border:1px solid var(--line)}.btn.sm{padding:5px 10px;font-size:.85rem}.btn.del{background:none;color:var(--danger);border:1px solid var(--line)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}
+label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:4px}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+textarea{min-height:70px}
+.f{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-bottom:12px}
+table{width:100%;border-collapse:collapse;font-size:.92rem}th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:500;font-size:.8rem}
+td input,td select{padding:5px 7px}
+.num{font-variant-numeric:tabular-nums}
+.stats{display:flex;gap:18px;flex-wrap:wrap;padding:12px 14px;background:var(--bg);border-radius:8px;margin:12px 0}
+.stats div b{display:block;font-size:1.25rem}.stats div span{font-size:.75rem;color:var(--muted)}
+.swatch{width:22px;height:22px;border-radius:50%;display:inline-block;vertical-align:middle;border:1px solid var(--line)}
+dialog{border:0;border-radius:14px;padding:0;background:var(--surface);color:var(--ink);width:min(900px,95vw);max-height:92vh}
+dialog::backdrop{background:rgba(0,0,0,.45)}.dlg{padding:22px}
+.empty{padding:40px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:var(--r)}
+.low{color:var(--danger);font-weight:600}
+section.sec{margin-top:18px}.sec h4{margin:0 0 8px}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><svg width="28" height="28" viewBox="0 0 32 32" fill="none" aria-label="Cellar logo"><path d="M9 4h14l-2.2 23H11.2z" stroke="currentColor" stroke-width="2"/><path d="M10 11h12" stroke="var(--accent)" stroke-width="3"/><circle cx="14" cy="17" r="1.3" fill="var(--accent)"/><circle cx="18" cy="21" r="1" fill="var(--accent)"/></svg>Cellar</div>
+  <nav id="nav"></nav>
+</header>
+<main id="app"></main>
+<dialog id="dlg"><div class="dlg" id="dlgBody"></div></dialog>
+
+<script>
+// ---------- storage ----------
+const KEY='cellar.v1';
+const seed={recipes:[{id:'r1',name:'Nanoose Pale Ale',kind:'Beer',style:'American Pale Ale',volume:20,eff:72,boil:60,
+ grains:[{n:'Pale 2-Row',kg:4.2,ppg:37,l:2},{n:'Crystal 40',kg:0.4,ppg:34,l:40},{n:'Munich',kg:0.3,ppg:35,l:9}],
+ hops:[{n:'Centennial',g:25,aa:10,min:60},{n:'Cascade',g:30,aa:6,min:10},{n:'Cascade',g:40,aa:6,min:0}],
+ fermentables:[],yeast:'US-05',atten:77,notes:'House pale. Mash 66°C for 60 min.'},
+ {id:'r2',name:'Island Blackberry Wine',kind:'Wine',style:'Fruit Wine',volume:23,eff:100,boil:0,grains:[],hops:[],
+ fermentables:[{n:'Blackberries',kg:6,ppg:8},{n:'Cane sugar',kg:4,ppg:46}],yeast:'Lalvin EC-1118',atten:95,notes:'Pectic enzyme + K-meta 24h before pitch.'}],
+ batches:[],inventory:[{id:'i1',n:'Pale 2-Row',cat:'Grain',qty:8,unit:'kg',min:5},{id:'i2',n:'Cascade',cat:'Hops',qty:60,unit:'g',min:100},{id:'i3',n:'US-05',cat:'Yeast',qty:2,unit:'pk',min:1},{id:'i4',n:'Lalvin EC-1118',cat:'Yeast',qty:3,unit:'pk',min:1}]};
+let api='/data';
+let db=structuredClone(seed);
+function persistLocal(){ try{ localStorage.setItem(KEY, JSON.stringify(db)); }catch{} }
+function loadLocal(){
+  try{ const d=JSON.parse(localStorage.getItem(KEY)||''); if(d&&d.recipes){ db=d; return true; } }catch{}
+  return false;
+}
+function candidateApis(){
+  const urls=[];
+  if(location.protocol==='http:'||location.protocol==='https:') urls.push(new URL('/data', location.origin).href);
+  const local='http://127.0.0.1:8000/data';
+  if(!urls.includes(local)) urls.push(local);
+  return urls;
+}
+async function pull(){
+  for(const url of candidateApis()){
+    const ctrl=new AbortController();
+    const timer=setTimeout(()=>ctrl.abort(), 1200);
+    try{
+      const r=await fetch(url,{signal:ctrl.signal,cache:'no-store'});
+      if(!r.ok) continue;
+      const d=await r.json();
+      api=url;
+      if(d&&d.recipes){ db=d; persistLocal(); return 'server'; }
+      return 'empty';
+    }catch{ continue; }
+    finally{ clearTimeout(timer); }
+  }
+  return 'offline';
+}
+const save=()=>{
+  persistLocal();
+  fetch(api,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(db)}).catch(()=>{});
+};
+const uid=()=>Math.random().toString(36).slice(2,9);
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const today=()=>new Date().toISOString().slice(0,10);
+
+// ---------- brewing math ----------
+const L_PER_GAL=3.78541, LB_PER_KG=2.20462;
+function calc(r){
+  const gal=r.volume/L_PER_GAL; let pts=0, mcu=0;
+  r.grains.forEach(g=>{const lb=g.kg*LB_PER_KG; pts+=lb*g.ppg*(r.eff/100); mcu+=lb*g.l/gal;});
+  (r.fermentables||[]).forEach(f=>{pts+=f.kg*LB_PER_KG*f.ppg;});
+  const og=1+pts/gal/1000, fg=1+(og-1)*(1-r.atten/100);
+  const abv=(og-fg)*131.25;
+  let ibu=0; r.hops.forEach(h=>{const bf=1.65*Math.pow(0.000125,og-1), tf=(1-Math.exp(-0.04*h.min))/4.15;
+    ibu+=bf*tf*(h.aa/100*h.g*1000)/r.volume;});
+  const srm=mcu?1.4922*Math.pow(mcu,0.6859):0;
+  return {og,fg,abv,ibu,srm};
+}
+const abvOf=(og,fg)=>(og-fg)*131.25;
+function srmColor(s){const t=[[0,'#F8F4B4'],[3,'#F6E97A'],[6,'#E5B744'],[10,'#C8822B'],[15,'#A6581E'],[20,'#7F3B14'],[30,'#4A1F0B'],[40,'#240E05']];
+  for(let i=t.length-1;i>=0;i--) if(s>=t[i][0]) return t[i][1]; return t[0][1];}
+const sg=n=>n.toFixed(3);
+
+// ---------- nav ----------
+const views={dash:'Dashboard',recipes:'Recipes',batches:'Batches',inventory:'Inventory',tools:'Calculators',data:'Backup'};
+let view='dash';
+function nav(){ $('#nav').innerHTML=Object.entries(views).map(([k,v])=>`<button class="${k===view?'on':''}" onclick="go('${k}')">${v}</button>`).join(''); }
+function go(v){view=v;nav();render();}
+function render(){ ({dash,recipes,batches,inventory,tools,data})[view](); }
+
+// ---------- dashboard ----------
+function dash(){
+  const active=db.batches.filter(b=>b.status!=='Done');
+  const low=db.inventory.filter(i=>+i.qty<=+i.min);
+  const litres=db.batches.reduce((a,b)=>a+(+b.volume||0),0);
+  $('#app').innerHTML=`<h2>Good evening, Lance</h2><p class="sub">What's in the cellar right now.</p>
+  <div class="kpis">
+   <div class="card kpi"><div class="v">${active.length}</div><div class="l">Active batches</div></div>
+   <div class="card kpi"><div class="v">${db.recipes.length}</div><div class="l">Recipes</div></div>
+   <div class="card kpi"><div class="v">${litres.toFixed(0)} L</div><div class="l">Brewed all-time</div></div>
+   <div class="card kpi"><div class="v ${low.length?'low':''}">${low.length}</div><div class="l">Low-stock items</div></div>
+  </div>
+  <div class="row between"><h4 style="margin:0">Fermenting now</h4><button class="btn sm" onclick="go('batches')">All batches</button></div><br>
+  ${active.length?`<div class="grid">${active.map(batchCard).join('')}</div>`:`<div class="empty">Nothing fermenting. Start a batch from any recipe.</div>`}
+  ${low.length?`<section class="sec"><h4>Reorder soon</h4><div class="card">${low.map(i=>`${esc(i.n)} — <span class="low">${i.qty} ${esc(i.unit)}</span> (min ${i.min})`).join('<br>')}</div></section>`:''}`;
+}
+
+// ---------- recipes ----------
+function recipes(){
+  $('#app').innerHTML=`<div class="row between"><div><h2>Recipes</h2><p class="sub">Beer, wine, cider and mead.</p></div><button class="btn" onclick="editRecipe()">New recipe</button></div>
+  <div class="grid">${db.recipes.map(r=>{const c=calc(r);return `<div class="card"><span class="tag">${esc(r.kind)}</span>
+   <h3>${esc(r.name)}</h3><div class="sub" style="margin:0 0 10px">${esc(r.style)} · ${r.volume} L</div>
+   <div class="row num" style="font-size:.9rem"><span class="swatch" style="background:${srmColor(c.srm)}"></span>OG ${sg(c.og)} · ${c.abv.toFixed(1)}% ${r.hops.length?'· '+c.ibu.toFixed(0)+' IBU':''}</div><br>
+   <div class="row"><button class="btn sm" onclick="startBatch('${r.id}')">Brew this</button><button class="btn ghost sm" onclick="editRecipe('${r.id}')">Edit</button></div></div>`}).join('')||'<div class="empty">No recipes yet.</div>'}</div>`;
+}
+let draft=null;
+function editRecipe(id){
+  draft=id?structuredClone(db.recipes.find(r=>r.id===id)):{id:uid(),name:'',kind:'Beer',style:'',volume:20,eff:72,boil:60,grains:[],hops:[],fermentables:[],yeast:'',atten:75,notes:'',_new:true};
+  drawRecipe(); $('#dlg').showModal();
+}
+function drawRecipe(){
+  const r=draft,c=calc(r);
+  const rows=(arr,key,cols)=>arr.map((x,i)=>`<tr>${cols.map(([f,t])=>`<td><input ${t?'type=number step=any':''} value="${esc(x[f])}" oninput="draft.${key}[${i}].${f}=${t?'+this.value':'this.value'};upd()"></td>`).join('')}<td><button class="btn del sm" onclick="draft.${key}.splice(${i},1);drawRecipe()">×</button></td></tr>`).join('');
+  $('#dlgBody').innerHTML=`<div class="row between"><h2>${r._new?'New recipe':'Edit recipe'}</h2><button class="btn ghost sm" onclick="dlg.close()">Close</button></div>
+  <div class="f"><div><label>Name</label><input value="${esc(r.name)}" oninput="draft.name=this.value"></div>
+   <div><label>Type</label><select onchange="draft.kind=this.value">${['Beer','Wine','Cider','Mead'].map(k=>`<option ${k===r.kind?'selected':''}>${k}</option>`).join('')}</select></div>
+   <div><label>Style</label><input value="${esc(r.style)}" oninput="draft.style=this.value"></div></div>
+  <div class="f"><div><label>Batch volume (L)</label><input type=number step=any value="${r.volume}" oninput="draft.volume=+this.value;upd()"></div>
+   <div><label>Mash efficiency %</label><input type=number value="${r.eff}" oninput="draft.eff=+this.value;upd()"></div>
+   <div><label>Yeast</label><input value="${esc(r.yeast)}" oninput="draft.yeast=this.value"></div>
+   <div><label>Attenuation %</label><input type=number value="${r.atten}" oninput="draft.atten=+this.value;upd()"></div></div>
+  <div class="stats" id="rstats"></div>
+  <section class="sec"><div class="row between"><h4>Grains (mashed)</h4><button class="btn ghost sm" onclick="draft.grains.push({n:'',kg:1,ppg:36,l:2});drawRecipe()">+ Grain</button></div>
+   <table><tr><th>Name</th><th>kg</th><th>PPG</th><th>°L</th><th></th></tr>${rows(r.grains,'grains',[['n'],['kg',1],['ppg',1],['l',1]])}</table></section>
+  <section class="sec"><div class="row between"><h4>Hops</h4><button class="btn ghost sm" onclick="draft.hops.push({n:'',g:20,aa:6,min:60});drawRecipe()">+ Hop</button></div>
+   <table><tr><th>Name</th><th>grams</th><th>AA %</th><th>Boil min</th><th></th></tr>${rows(r.hops,'hops',[['n'],['g',1],['aa',1],['min',1]])}</table></section>
+  <section class="sec"><div class="row between"><h4>Sugars, fruit, honey, juice</h4><button class="btn ghost sm" onclick="draft.fermentables.push({n:'',kg:1,ppg:46});drawRecipe()">+ Fermentable</button></div>
+   <table><tr><th>Name</th><th>kg</th><th>PPG</th><th></th></tr>${rows(r.fermentables,'fermentables',[['n'],['kg',1],['ppg',1]])}</table>
+   <p class="sub" style="font-size:.8rem;margin-top:6px">PPG guide: sugar 46, honey 35, DME 44, apple juice ~6 per kg-equivalent, fresh fruit 6–9.</p></section>
+  <section class="sec"><label>Notes / process</label><textarea oninput="draft.notes=this.value">${esc(r.notes)}</textarea></section>
+  <div class="row between" style="margin-top:16px">${r._new?'<span></span>':`<button class="btn del" onclick="delRecipe()">Delete</button>`}<button class="btn" onclick="saveRecipe()">Save recipe</button></div>`;
+  upd();
+}
+function upd(){const c=calc(draft);$('#rstats').innerHTML=`<div><b class="num">${sg(c.og)}</b><span>Est. OG</span></div><div><b class="num">${sg(c.fg)}</b><span>Est. FG</span></div><div><b class="num">${c.abv.toFixed(1)}%</b><span>ABV</span></div><div><b class="num">${c.ibu.toFixed(0)}</b><span>IBU (Tinseth)</span></div><div><b class="num"><span class="swatch" style="background:${srmColor(c.srm)}"></span> ${c.srm.toFixed(1)}</b><span>SRM</span></div>`;}
+function saveRecipe(){const r=draft;delete r._new;if(!r.name)r.name='Untitled';const i=db.recipes.findIndex(x=>x.id===r.id);i>=0?db.recipes[i]=r:db.recipes.push(r);save();dlg.close();render();}
+function delRecipe(){if(!confirm('Delete this recipe?'))return;db.recipes=db.recipes.filter(x=>x.id!==draft.id);save();dlg.close();render();}
+
+// ---------- batches ----------
+function startBatch(rid){
+  const r=db.recipes.find(x=>x.id===rid),c=calc(r);
+  const b={id:uid(),rid,name:r.name,kind:r.kind,volume:r.volume,date:today(),status:'Fermenting',targetOg:c.og,targetFg:c.fg,readings:[],notes:''};
+  // deduct inventory
+  const used=[];[...r.grains.map(g=>[g.n,g.kg,'kg']),...r.hops.map(h=>[h.n,h.g,'g']),...(r.fermentables||[]).map(f=>[f.n,f.kg,'kg']),[r.yeast,1,'pk']].forEach(([n,q,u])=>{
+    const it=db.inventory.find(i=>i.n.toLowerCase()===String(n).toLowerCase()&&i.unit===u); if(it){it.qty=+(it.qty-q).toFixed(2);used.push(`${n} −${q}${u}`);}});
+  db.batches.unshift(b);save();
+  if(used.length) alert('Batch started. Deducted from inventory:\n'+used.join('\n'));
+  view='batches';nav();openBatch(b.id);render();
+}
+function batchCard(b){const last=b.readings.at(-1);const cur=last?+last.sg:null;
+  return `<div class="card" style="cursor:pointer" onclick="openBatch('${b.id}')"><span class="tag ${b.status==='Done'?'done':'ferm'}">${b.status}</span><span class="tag">${esc(b.kind)}</span>
+  <h3>${esc(b.name)}</h3><div class="sub" style="margin:0">Brewed ${b.date} · ${b.volume} L</div>
+  <div class="num" style="margin-top:8px">${cur?`Now ${sg(cur)} · ${b.og?abvOf(b.og,cur).toFixed(1)+'% so far':''}`:'No readings yet'}</div></div>`;}
+function batches(){
+  $('#app').innerHTML=`<div class="row between"><div><h2>Batches</h2><p class="sub">Start one from a recipe, then log gravity and temperature as it ferments.</p></div><button class="btn" onclick="go('recipes')">Start from recipe</button></div>
+  ${db.batches.length?`<div class="grid">${db.batches.map(batchCard).join('')}</div>`:'<div class="empty">No batches yet.</div>'}`;
+}
+let chart;
+function openBatch(id){
+  const b=db.batches.find(x=>x.id===id);
+  $('#dlgBody').innerHTML=`<div class="row between"><h2>${esc(b.name)}</h2><button class="btn ghost sm" onclick="dlg.close();render()">Close</button></div>
+  <div class="f"><div><label>Status</label><select onchange="bset('${id}','status',this.value)">${['Planned','Fermenting','Conditioning','Bottled','Done'].map(s=>`<option ${s===b.status?'selected':''}>${s}</option>`).join('')}</select></div>
+   <div><label>Brew date</label><input type=date value="${b.date}" onchange="bset('${id}','date',this.value)"></div>
+   <div><label>Actual OG</label><input type=number step=0.001 value="${b.og||''}" placeholder="${sg(b.targetOg)}" onchange="bset('${id}','og',+this.value)"></div>
+   <div><label>Volume (L)</label><input type=number step=any value="${b.volume}" onchange="bset('${id}','volume',+this.value)"></div></div>
+  <div class="stats"><div><b class="num">${sg(b.targetOg)}</b><span>Target OG</span></div><div><b class="num">${sg(b.targetFg)}</b><span>Target FG</span></div>
+   <div><b class="num">${b.og&&b.readings.length?abvOf(b.og,+b.readings.at(-1).sg).toFixed(1)+'%':'—'}</b><span>Current ABV</span></div>
+   <div><b class="num">${b.og&&b.readings.length?Math.round((b.og-b.readings.at(-1).sg)/(b.og-1)*100)+'%':'—'}</b><span>Apparent attenuation</span></div></div>
+  <section class="sec"><h4>Log a reading</h4><div class="f"><div><label>Date</label><input id="rd" type=date value="${today()}"></div><div><label>Gravity</label><input id="rg" type=number step=0.001 placeholder="1.012"></div><div><label>Temp °C</label><input id="rt" type=number step=0.1 placeholder="19"></div><div><label>Note</label><input id="rn" placeholder="Tastes clean"></div></div>
+   <button class="btn sm" onclick="addReading('${id}')">Add reading</button></section>
+  <section class="sec"><canvas id="bc" height="110"></canvas></section>
+  <table>${b.readings.map((r,i)=>`<tr><td>${r.d}</td><td class="num">${sg(+r.sg)}</td><td class="num">${r.t??''}°C</td><td>${esc(r.n)}</td><td><button class="btn del sm" onclick="db.batches.find(x=>x.id==='${id}').readings.splice(${i},1);save();openBatch('${id}')">×</button></td></tr>`).join('')}</table>
+  <section class="sec"><label>Tasting & process notes</label><textarea onchange="bset('${id}','notes',this.value)">${esc(b.notes)}</textarea></section>
+  <div style="margin-top:14px"><button class="btn del sm" onclick="if(confirm('Delete batch?')){db.batches=db.batches.filter(x=>x.id!=='${id}');save();dlg.close();render()}">Delete batch</button></div>`;
+  if(!dlg.open) dlg.showModal();
+  if(chart) chart.destroy();
+  if(b.readings.length){const cs=getComputedStyle(document.documentElement);
+    chart=new Chart($('#bc'),{type:'line',data:{labels:b.readings.map(r=>r.d),datasets:[{label:'Gravity',data:b.readings.map(r=>+r.sg),borderColor:cs.getPropertyValue('--accent'),yAxisID:'y',tension:.3},{label:'Temp °C',data:b.readings.map(r=>r.t),borderColor:cs.getPropertyValue('--accent2'),yAxisID:'y1',tension:.3}]},
+    options:{plugins:{legend:{labels:{color:cs.getPropertyValue('--muted')}}},scales:{y:{position:'left'},y1:{position:'right',grid:{drawOnChartArea:false}}}}});}
+}
+function bset(id,k,v){db.batches.find(x=>x.id===id)[k]=v;save();openBatch(id);}
+function addReading(id){const g=+$('#rg').value;if(!g)return alert('Enter a gravity reading');
+  const b=db.batches.find(x=>x.id===id);b.readings.push({d:$('#rd').value,sg:g,t:$('#rt').value?+$('#rt').value:null,n:$('#rn').value});
+  b.readings.sort((a,c)=>a.d.localeCompare(c.d));save();openBatch(id);}
+
+// ---------- inventory ----------
+function inventory(){
+  $('#app').innerHTML=`<div class="row between"><div><h2>Inventory</h2><p class="sub">Items are deducted automatically when you brew a recipe with matching names.</p></div><button class="btn" onclick="db.inventory.push({id:uid(),n:'',cat:'Grain',qty:0,unit:'kg',min:0});save();render()">Add item</button></div>
+  <div class="card"><table><tr><th>Item</th><th>Category</th><th>Qty</th><th>Unit</th><th>Reorder at</th><th></th></tr>
+  ${db.inventory.map((i,k)=>`<tr><td><input value="${esc(i.n)}" onchange="iset(${k},'n',this.value)"></td>
+   <td><select onchange="iset(${k},'cat',this.value)">${['Grain','Hops','Yeast','Sugar','Fruit','Chemical','Other'].map(c=>`<option ${c===i.cat?'selected':''}>${c}</option>`).join('')}</select></td>
+   <td><input type=number step=any value="${i.qty}" class="${+i.qty<=+i.min?'low':''}" onchange="iset(${k},'qty',+this.value)"></td>
+   <td><select onchange="iset(${k},'unit',this.value)">${['kg','g','pk','L','ml','each'].map(u=>`<option ${u===i.unit?'selected':''}>${u}</option>`).join('')}</select></td>
+   <td><input type=number step=any value="${i.min}" onchange="iset(${k},'min',+this.value)"></td>
+   <td><button class="btn del sm" onclick="db.inventory.splice(${k},1);save();render()">×</button></td></tr>`).join('')}</table></div>`;
+}
+function iset(k,f,v){db.inventory[k][f]=v;save();if(f==='qty'||f==='min')render();}
+
+// ---------- calculators ----------
+function tools(){
+  $('#app').innerHTML=`<h2>Calculators</h2><p class="sub">Quick answers on brew day.</p><div class="grid">
+  <div class="card"><h3>ABV</h3><div class="f"><div><label>OG</label><input id="a1" type=number step=.001 value="1.050"></div><div><label>FG</label><input id="a2" type=number step=.001 value="1.010"></div></div><div id="ao" class="stats"></div></div>
+  <div class="card"><h3>Hydrometer temp correction</h3><div class="f"><div><label>Reading</label><input id="h1" type=number step=.001 value="1.050"></div><div><label>Sample °C</label><input id="h2" type=number value="30"></div><div><label>Calibrated °C</label><input id="h3" type=number value="20"></div></div><div id="ho" class="stats"></div></div>
+  <div class="card"><h3>Refractometer (Brix → SG)</h3><div class="f"><div><label>Brix</label><input id="b1" type=number step=.1 value="12.5"></div><div><label>Wort correction</label><input id="b2" type=number step=.01 value="1.04"></div></div><div id="bo" class="stats"></div></div>
+  <div class="card"><h3>Priming sugar</h3><div class="f"><div><label>Volume L</label><input id="p1" type=number value="19"></div><div><label>Target CO₂ vols</label><input id="p2" type=number step=.1 value="2.4"></div><div><label>Beer temp °C</label><input id="p3" type=number value="20"></div></div><div id="po" class="stats"></div></div>
+  <div class="card"><h3>Sugar to raise gravity</h3><div class="f"><div><label>Volume L</label><input id="s1" type=number value="23"></div><div><label>Current SG</label><input id="s2" type=number step=.001 value="1.060"></div><div><label>Target SG</label><input id="s3" type=number step=.001 value="1.090"></div></div><div id="so" class="stats"></div></div>
+  <div class="card"><h3>Potassium metabisulfite</h3><div class="f"><div><label>Volume L</label><input id="k1" type=number value="23"></div><div><label>Target free SO₂ ppm</label><input id="k2" type=number value="30"></div></div><div id="ko" class="stats"></div><p class="sub" style="font-size:.8rem;margin:0">KMS is ~57.6% SO₂.</p></div>
+  </div>`;
+  const v=id=>+document.getElementById(id).value;
+  const run=()=>{
+    $('#ao').innerHTML=`<div><b>${abvOf(v('a1'),v('a2')).toFixed(2)}%</b><span>ABV</span></div>`;
+    const f=t=>{t=t*9/5+32;return 1.00130346-0.000134722124*t+0.00000204052596*t*t-0.00000000232820948*t*t*t;};
+    $('#ho').innerHTML=`<div><b>${(v('h1')*f(v('h2'))/f(v('h3'))).toFixed(3)}</b><span>Corrected SG</span></div>`;
+    const b=v('b1')/v('b2');$('#bo').innerHTML=`<div><b>${(1+b/(258.6-(b/258.2)*227.1)).toFixed(3)}</b><span>SG (pre-ferment)</span></div>`;
+    const tf=v('p3')*9/5+32,res=3.0378-0.050062*tf+0.00026555*tf*tf,g=(v('p2')-res)*v('p1')*4.0;
+    $('#po').innerHTML=`<div><b>${Math.max(0,g).toFixed(0)} g</b><span>Table sugar</span></div><div><b>${Math.max(0,g*1.1).toFixed(0)} g</b><span>Corn sugar</span></div>`;
+    const kg=(v('s3')-v('s2'))*1000*v('s1')/L_PER_GAL/46/LB_PER_KG;$('#so').innerHTML=`<div><b>${Math.max(0,kg).toFixed(2)} kg</b><span>Cane sugar</span></div>`;
+    $('#ko').innerHTML=`<div><b>${(v('k2')*v('k1')/1000/0.576).toFixed(2)} g</b><span>KMS powder</span></div><div><b>${Math.ceil(v('k1')/4.5)}</b><span>Campden tablets (approx)</span></div>`;
+  };
+  document.querySelectorAll('#app input').forEach(i=>i.oninput=run);run();
+}
+
+// ---------- backup ----------
+function data(){
+  $('#app').innerHTML=`<h2>Backup</h2><p class="sub">Saved in this browser, and on your Cellar server when it is running. Export a copy to move it to another device.</p>
+  <div class="row"><button class="btn" onclick="exp()">Export backup (.json)</button><label class="btn ghost" style="margin:0;color:var(--ink)">Import backup<input type=file accept=".json" style="display:none" onchange="imp(this)"></label>
+  <button class="btn del" onclick="if(confirm('Erase everything and restore sample data?')){db=structuredClone(seed);save();render()}">Reset</button></div>`;
+}
+function exp(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));a.download=`cellar-backup-${today()}.json`;a.click();}
+function imp(inp){const f=inp.files[0];if(!f)return;f.text().then(t=>{try{const d=JSON.parse(t);if(!d.recipes)throw 0;db=d;save();alert('Imported.');render();}catch{alert('That file is not a Cellar backup.');}});}
+
+const dlg=$('#dlg');
+nav();
+$('#app').innerHTML='<p class="sub">Loading cellar…</p>';
+pull().then(result=>{
+  if(result==='server'){ render(); return; }
+  const had=loadLocal();
+  if(result==='empty') save();
+  else if(!had) persistLocal();
+  render();
+});
+</script>
+</body>
+</html>
