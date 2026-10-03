@@ -1,0 +1,57 @@
+---
+description: How to route work across Grok, Grok bot, Muse, Perplexity, and the other connected apps
+alwaysApply: true
+---
+
+# AI environment
+
+This workspace is a personal GitHub Pages site. Use the connected AI tools below instead of guessing or browsing around them.
+
+## Who does the work
+
+- Do coding, file edits, and orchestration in this chat. This agent is Grok.
+- Hand a bounded subtask to another Grok agent when a lighter or heavier pass would help.
+- Hand a bounded subtask to Muse Spark when the user asks for Muse, or when a second model should try the same task. Use the lightest Muse effort that can do the job.
+
+## Grok by xAI
+
+A separate Grok account is connected through Zapier. Use it when the user wants that Grok, live data, or image generation:
+
+- Ask Grok, with realtime X, web, news, and RSS when the question needs current data
+- Generate an image from a text prompt
+- Extract fields from text or from an image
+- Categorize text
+
+These calls send the prompt to xAI. Show the exact prompt and wait for approval before running one.
+
+## Grok bot and X
+
+X is connected. Use it for the user's profile, timeline, mentions, bookmarks, a post, an account lookup, post search, news, and trends.
+
+Encrypted X Chat is the Grok bot inbox. Read and reply there when the user asks about chat, DMs, or Grok bot messages. The Chat PIN stays in the secret store. Show outbound message text and wait for approval before sending. Publishing posts is outside this connection.
+
+## Perplexity
+
+Perplexity is connected through Zapier. Use it for cited web answers and ranked search.
+
+- Search returns ranked web results
+- Chat can use sonar, sonar-pro, sonar-reasoning, sonar-reasoning-pro, sonar-deep-research, or r1-1776
+
+Prefer Sonar for a normal cited answer, Sonar Pro when the topic is broad, and Sonar Deep Research only when the user asks for a deep pass. Show the query and model, then wait for approval before running one.
+
+## Which tool to pick
+
+- Code, files, and this website: this chat
+- Cited web answer or a source list: Perplexity
+- Live X posts, news, or an image from Grok: Grok by xAI
+- The user's X account or Grok bot messages: X
+- A second attempt at the same task: Muse Spark
+- Something the user already saved: search Recall before the open web
+
+## Other connected apps
+
+Prefer a native connection when the same app exists in both places. Native connections here include Gmail, Superhuman Mail, X, and Recall. Use Zapier for Perplexity, Grok by xAI, Google Docs, Google Sheets, Google Drive, Google Calendar, Dropbox, Feedly, Todoist, and Workflowy.
+
+Readwise and memwal are installed and still need authentication. Slack, Reddit, and Zapier Tables are enabled and have no account connected. Say so when a request needs one of them, and do not invent results.
+
+Look up read data without asking. Confirm before any write: sending, creating, updating, deleting, or calling Grok or Perplexity.
